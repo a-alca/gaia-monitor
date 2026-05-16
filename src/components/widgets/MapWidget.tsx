@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Map, Layers, Navigation, Maximize2 } from 'lucide-react';
+import { Map, Layers, Navigation, Maximize2, RefreshCw } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
+import { useEnvironmentStore } from '@/stores/environmentStore';
 
 interface MapWidgetProps {
   className?: string;
@@ -14,6 +15,9 @@ export function MapWidget({ className }: MapWidgetProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  const { wildfireData, loading, useRealData, setUseRealData, fetchRealWildfireData } = useEnvironmentStore();
 
   useEffect(() => {
     // Only load Leaflet on client side
@@ -47,27 +51,6 @@ export function MapWidget({ className }: MapWidgetProps) {
           subdomains: 'abcd',
         }).addTo(map);
 
-        // Add sample markers for wildfires
-        const wildfireLocations = [
-          { lat: -23.5505, lng: -46.6333, name: 'São Paulo' },
-          { lat: -22.9068, lng: -43.1729, name: 'Rio de Janeiro' },
-          { lat: -19.9167, lng: -43.9345, name: 'Belo Horizonte' },
-          { lat: -3.1190, lng: -60.0217, name: 'Manaus' },
-        ];
-
-        const customIcon = L.divIcon({
-          className: 'custom-marker',
-          html: `<div style="background-color: #ef4444; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);"></div>`,
-          iconSize: [12, 12],
-          iconAnchor: [6, 6],
-        });
-
-        wildfireLocations.forEach(location => {
-          L.marker([location.lat, location.lng], { icon: customIcon })
-            .addTo(map)
-            .bindPopup(`<b>${location.name}</b><br>Foco de queimada ativo`);
-        });
-
         // Add zoom control to bottom right
         L.control.zoom({
           position: 'bottomright'
@@ -89,6 +72,80 @@ export function MapWidget({ className }: MapWidgetProps) {
 
     loadMap();
   }, []);
+
+  // Update markers when wildfireData changes
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded) return;
+
+    const updateMarkers = async () => {
+      try {
+        const L = (await import('leaflet')).default;
+        
+        // Remove existing markers
+        mapRef.current.eachLayer((layer: any) => {
+          if (layer instanceof L.Marker) {
+            mapRef.current.removeLayer(layer);
+          }
+        });
+
+        // Add new markers
+        const locations = wildfireData.map(fire => ({
+          lat: fire.location.lat,
+          lng: fire.location.lng,
+          name: fire.location.name,
+          intensity: fire.intensity,
+        }));
+
+        const getIntensityColor = (intensity: string) => {
+          switch (intensity) {
+            case 'extreme': return '#ef4444';
+            case 'high': return '#f97316';
+            case 'medium': return '#eab308';
+            case 'low': return '#22c55e';
+            default: return '#6b7280';
+          }
+        };
+
+        locations.forEach(location => {
+          const customIcon = L.divIcon({
+            className: 'custom-marker',
+            html: `<div style="
+              background-color: ${getIntensityColor(location.intensity)}; 
+              width: 12px; 
+              height: 12px; 
+              border-radius: 50%; 
+              border: 2px solid #fff; 
+              box-shadow: 0 0 10px ${getIntensityColor(location.intensity)}80;
+            "></div>`,
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+          });
+
+          L.marker([location.lat, location.lng], { icon: customIcon })
+            .addTo(mapRef.current)
+            .bindPopup(`<b>${location.name}</b><br>Intensidade: ${location.intensity}`);
+        });
+
+      } catch (error) {
+        console.error('Error updating markers:', error);
+      }
+    };
+
+    updateMarkers();
+  }, [wildfireData, isLoaded]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchRealWildfireData();
+    setIsRefreshing(false);
+  };
+
+  const toggleDataMode = () => {
+    setUseRealData(!useRealData);
+    if (!useRealData) {
+      handleRefresh();
+    }
+  };
 
   const toggleFullscreen = () => {
     if (!mapContainerRef.current) return;
@@ -113,11 +170,36 @@ export function MapWidget({ className }: MapWidgetProps) {
           <div>
             <h3 className="text-lg font-semibold text-foreground mb-1">Mapa Ambiental</h3>
             <p className="text-sm text-foreground-muted">Visão geoespacial territorial</p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-foreground-muted">Fonte:</span>
+              <span className={`text-xs font-medium ${useRealData ? 'text-green-400' : 'text-foreground-muted'}`}>
+                {useRealData ? 'INPE (Tempo Real)' : 'Dados Demo'}
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <div className="p-3 bg-green-500/10 rounded-lg">
               <Map className="w-6 h-6 text-green-500" />
             </div>
+            <motion.button
+              onClick={handleRefresh}
+              disabled={loading}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-lg hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 text-foreground-muted ${isRefreshing ? 'animate-spin' : ''}`} />
+            </motion.button>
+            <motion.button
+              onClick={toggleDataMode}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+            >
+              <span className="text-xs font-medium text-foreground-muted">
+                {useRealData ? 'Demo' : 'Real'}
+              </span>
+            </motion.button>
             <button
               onClick={toggleFullscreen}
               className="p-2 rounded-lg hover:bg-muted transition-colors"
@@ -146,21 +228,36 @@ export function MapWidget({ className }: MapWidgetProps) {
           </div>
         </div>
 
+        {/* Stats */}
+        <div className="absolute top-4 left-4 z-10 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-border">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-foreground-muted">Focos ativos:</span>
+            <span className="text-lg font-bold text-foreground">{wildfireData.length}</span>
+          </div>
+          {loading && (
+            <div className="text-xs text-foreground-muted mt-1">Atualizando...</div>
+          )}
+        </div>
+
         {/* Legend */}
         <div className="absolute bottom-4 left-4 z-10 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-border">
-          <h4 className="text-xs font-semibold text-foreground mb-2">Legenda</h4>
+          <h4 className="text-xs font-semibold text-foreground mb-2">Intensidade</h4>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-red-500" />
-              <span className="text-xs text-foreground-muted">Focos de Queimada</span>
+              <span className="text-xs text-foreground-muted">Extrema</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-orange-500" />
+              <span className="text-xs text-foreground-muted">Alta</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-yellow-500" />
-              <span className="text-xs text-foreground-muted">Alertas</span>
+              <span className="text-xs text-foreground-muted">Média</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-green-500" />
-              <span className="text-xs text-foreground-muted">Áreas Protegidas</span>
+              <span className="text-xs text-foreground-muted">Baixa</span>
             </div>
           </div>
         </div>
