@@ -17,7 +17,7 @@ export function MapWidget({ className }: MapWidgetProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  const { wildfireData, loading, useRealData, setUseRealData, fetchRealWildfireData } = useEnvironmentStore();
+  const { wildfireData, loading, error, useRealData, setUseRealData, fetchRealWildfireData } = useEnvironmentStore();
 
   useEffect(() => {
     // Only load Leaflet on client side
@@ -141,8 +141,9 @@ export function MapWidget({ className }: MapWidgetProps) {
   };
 
   const toggleDataMode = () => {
-    setUseRealData(!useRealData);
-    if (!useRealData) {
+    const newMode = !useRealData;
+    setUseRealData(newMode);
+    if (newMode) {
       handleRefresh();
     }
   };
@@ -236,6 +237,9 @@ export function MapWidget({ className }: MapWidgetProps) {
           </div>
           {loading && (
             <div className="text-xs text-foreground-muted mt-1">Atualizando...</div>
+          )}
+          {error && useRealData && (
+            <div className="text-xs text-red-400 mt-1">Erro: {error}</div>
           )}
         </div>
 

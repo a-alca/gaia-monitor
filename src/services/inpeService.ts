@@ -20,71 +20,27 @@ export interface INPEWildfireData {
   satellite: string;
 }
 
-const INPE_BASE_URL = 'https://dataserver-coids.inpe.br/queimadas/queimadas/focos/csv/10min/';
+// Use internal API route to avoid CORS issues
+const API_BASE_URL = '/api/wildfires';
 
 /**
- * Get the most recent fire focus data from INPE
+ * Get the most recent fire focus data from INPE via internal API
  */
 export async function getINPEFireFocusData(): Promise<INPEFireFocus[]> {
   try {
-    // Get current date in UTC
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const response = await fetch(API_BASE_URL);
+    const result = await response.json();
     
-    // Try to get the most recent hour data
-    const hour = String(now.getUTCHours()).padStart(2, '0');
-    const minute = '00'; // Get the hour mark
-    
-    const filename = `focos_10min_${year}${month}${day}_${hour}${minute}.csv`;
-    const url = `${INPE_BASE_URL}${filename}`;
-    
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      // If the most recent file doesn't exist, try the previous hour
-      const prevHour = String((now.getUTCHours() - 1 + 24) % 24).padStart(2, '0');
-      const prevFilename = `focos_10min_${year}${month}${day}_${prevHour}${minute}.csv`;
-      const prevUrl = `${INPE_BASE_URL}${prevFilename}`;
-      
-      const prevResponse = await fetch(prevUrl);
-      if (!prevResponse.ok) {
-        throw new Error('Unable to fetch INPE data');
-      }
-      
-      return parseCSVData(await prevResponse.text());
+    if (result.success && result.data) {
+      return result.data;
     }
     
-    return parseCSVData(await response.text());
+    console.error('INPE API returned error:', result.error);
+    return [];
   } catch (error) {
     console.error('Error fetching INPE data:', error);
     return [];
   }
-}
-
-/**
- * Parse CSV data from INPE format
- */
-function parseCSVData(csvText: string): INPEFireFocus[] {
-  const lines = csvText.trim().split('\n');
-  const data: INPEFireFocus[] = [];
-  
-  for (const line of lines) {
-    const parts = line.split(',').map(part => part.trim());
-    if (parts.length >= 4) {
-      const lat = parseFloat(parts[0]);
-      const lon = parseFloat(parts[1]);
-      const satelite = parts[2];
-      const data = parts[3];
-      
-      if (!isNaN(lat) && !isNaN(lon)) {
-        data.push({ lat, lon, satelite, data });
-      }
-    }
-  }
-  
-  return data;
 }
 
 /**
