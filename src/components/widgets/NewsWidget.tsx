@@ -1,52 +1,33 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Newspaper, Clock, ExternalLink, Tag } from 'lucide-react';
+import { Newspaper, Clock, ExternalLink } from 'lucide-react';
 import { News } from '@/types';
+import { useNewsEventsStore } from '@/stores/newsEventsStore';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface NewsWidgetProps {
   news?: News[];
 }
 
 export function NewsWidget({ news }: NewsWidgetProps) {
-  const mockNews: News[] = [
-    {
-      id: '1',
-      title: 'Novo satélite brasileiro monitorará desmatamento em tempo real',
-      summary: 'Lançamento do satélite Amazonia-1 promete revolucionar o monitoramento ambiental na região amazônica.',
-      content: 'O novo satélite equipado com sensores de última geração será capaz de detectar desmatamento em áreas menores que 1 hectare...',
-      source: 'Agência Brasil',
-      author: 'Maria Silva',
-      publishedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-      imageUrl: '',
-      category: 'Tecnologia',
-      tags: ['satélite', 'desmatamento', 'monitoramento'],
-    },
-    {
-      id: '2',
-      title: 'Estudo revela recuperação de 12% da Mata Atlântica',
-      summary: 'Pesquisa da USP mostra avanços na restauração de áreas degradadas nos últimos 20 anos.',
-      content: 'O estudo aponta que políticas públicas e iniciativas privadas contribuíram para a recuperação significativa de áreas...',
-      source: 'Folha de S.Paulo',
-      publishedAt: new Date(Date.now() - 5 * 60 * 60 * 1000),
-      imageUrl: '',
-      category: 'Meio Ambiente',
-      tags: ['mata atlântica', 'recuperação', 'restauração'],
-    },
-    {
-      id: '3',
-      title: 'Alerta de secas severas na região Sul',
-      summary: 'Climatologistas prevêm período de estiagem prolongada para os próximos meses.',
-      content: 'As condições climáticas atuais indicam um cenário preocupante para a agricultura na região sul do país...',
-      source: 'G1',
-      publishedAt: new Date(Date.now() - 8 * 60 * 60 * 1000),
-      imageUrl: '',
-      category: 'Clima',
-      tags: ['seca', 'clima', 'alerta'],
-    },
-  ];
+  const router = useRouter();
+  const { news: storeNews, fetchNews } = useNewsEventsStore();
+  
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
 
-  const newsData = news || mockNews;
+  const newsData = news || storeNews;
+
+  const handleNewsClick = (newsItem: News) => {
+    if (newsItem.externalUrl) {
+      window.open(newsItem.externalUrl, '_blank');
+    } else {
+      router.push(`/news/${newsItem.id}`);
+    }
+  };
 
   const getCategoryColor = (category: string) => {
     switch (category.toLowerCase()) {
@@ -58,9 +39,10 @@ export function NewsWidget({ news }: NewsWidgetProps) {
     }
   };
 
-  const formatTimeAgo = (date: Date) => {
+  const formatTimeAgo = (date: Date | string) => {
     const now = new Date();
-    const diffTime = now.getTime() - date.getTime();
+    const newsDate = typeof date === 'string' ? new Date(date) : date;
+    const diffTime = now.getTime() - newsDate.getTime();
     const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
     
     if (diffHours < 1) return 'Agora';
@@ -98,6 +80,7 @@ export function NewsWidget({ news }: NewsWidgetProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.5 + index * 0.1 }}
             className="group bg-muted/30 rounded-lg p-4 hover:bg-muted/50 transition-all cursor-pointer"
+            onClick={() => handleNewsClick(item)}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">

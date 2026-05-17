@@ -3,49 +3,31 @@
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Users, Video, ChevronRight } from 'lucide-react';
 import { Event } from '@/types';
+import { useNewsEventsStore } from '@/stores/newsEventsStore';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface EventsWidgetProps {
   events?: Event[];
 }
 
 export function EventsWidget({ events }: EventsWidgetProps) {
-  const mockEvents: Event[] = [
-    {
-      id: '1',
-      title: 'Seminário de Agrofloresta',
-      description: 'Técnicas modernas de sistemas agroflorestais',
-      type: 'conference',
-      date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      location: 'Centro de Convenções, São Paulo',
-      organizer: 'Instituto Gaia',
-      attendees: 150,
-      isVirtual: false,
-    },
-    {
-      id: '2',
-      title: 'Workshop de Monitoramento Ambiental',
-      description: 'Uso de tecnologias para monitoramento ambiental',
-      type: 'workshop',
-      date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      location: 'Online',
-      organizer: 'TechNature',
-      attendees: 75,
-      isVirtual: true,
-    },
-    {
-      id: '3',
-      title: 'Encontro de Produtores Rurais',
-      description: 'Discussão sobre práticas sustentáveis',
-      type: 'meeting',
-      date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      location: 'Sindicato Rural, Campinas',
-      organizer: 'Sindicato Rural',
-      attendees: 200,
-      isVirtual: false,
-    },
-  ];
+  const router = useRouter();
+  const { events: storeEvents, fetchEvents } = useNewsEventsStore();
+  
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
-  const eventsData = events || mockEvents;
+  const eventsData = events || storeEvents;
+
+  const handleEventClick = (event: Event) => {
+    if (event.registrationUrl) {
+      window.open(event.registrationUrl, '_blank');
+    } else {
+      router.push(`/events/${event.id}`);
+    }
+  };
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
@@ -67,23 +49,16 @@ export function EventsWidget({ events }: EventsWidgetProps) {
     }
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     const now = new Date();
-    const diffTime = date.getTime() - now.getTime();
+    const eventDate = typeof date === 'string' ? new Date(date) : date;
+    const diffTime = eventDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 0) return 'Hoje';
     if (diffDays === 1) return 'Amanhã';
     if (diffDays === 7) return 'Próxima semana';
     return `Em ${diffDays} dias`;
-  };
-
-  const formatFullDate = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
   };
 
   return (
@@ -112,6 +87,7 @@ export function EventsWidget({ events }: EventsWidgetProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3, delay: 0.4 + index * 0.1 }}
             className="group bg-muted/30 rounded-lg p-4 hover:bg-muted/50 transition-all cursor-pointer"
+            onClick={() => handleEventClick(event)}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">

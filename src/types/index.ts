@@ -69,6 +69,8 @@ export interface Event {
   organizer: string;
   attendees?: number;
   isVirtual: boolean;
+  registrationUrl?: string;
+  imageUrl?: string;
 }
 
 export interface News {
@@ -82,6 +84,7 @@ export interface News {
   imageUrl?: string;
   category: string;
   tags: string[];
+  externalUrl?: string;
 }
 
 export interface TerritoryData {
