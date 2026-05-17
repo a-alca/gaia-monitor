@@ -64,7 +64,7 @@ export async function GET() {
 
 function parseCSVData(csvText: string) {
   const lines = csvText.trim().split('\n');
-  const data = [];
+  const parsedData: Array<{ lat: number; lon: number; satelite: string; dataHora: string }> = [];
   
   for (const line of lines) {
     const parts = line.split(',').map(part => part.trim());
@@ -72,13 +72,13 @@ function parseCSVData(csvText: string) {
       const lat = parseFloat(parts[0]);
       const lon = parseFloat(parts[1]);
       const satelite = parts[2];
-      const data = parts[3];
+      const dataHora = parts[3];
       
       if (!isNaN(lat) && !isNaN(lon)) {
-        data.push({ lat, lon, satelite, data });
+        parsedData.push({ lat, lon, satelite, dataHora });
       }
     }
   }
   
-  return data;
+  return parsedData;
 }
