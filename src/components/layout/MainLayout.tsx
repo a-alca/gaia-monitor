@@ -23,13 +23,19 @@ export function MainLayout({ children }: MainLayoutProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  // Calculate margin based on sidebar state and screen size
+  const getMarginLeft = () => {
+    if (isMobile) return '0';
+    return sidebarOpen ? '20rem' : '5rem'; // 5rem = 80px (sidebar minimizado)
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
       <div 
         className="transition-all duration-300"
         style={{
-          marginLeft: (!isMobile && sidebarOpen) ? '20rem' : '0'
+          marginLeft: getMarginLeft()
         }}
       >
         <Topbar />

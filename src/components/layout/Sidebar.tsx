@@ -42,8 +42,10 @@ export function Sidebar() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
-      if (window.innerWidth < 1024) {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      // Fecha sidebar em mobile, mas mantém estado atual em desktop
+      if (mobile && window.innerWidth >= 768) {
         setSidebarOpen(false);
       }
     };
@@ -71,13 +73,13 @@ export function Sidebar() {
       <motion.aside
         initial={false}
         animate={{ 
-          width: sidebarOpen ? 260 : isMobile ? 0 : 80,
+          width: sidebarOpen ? 260 : (isMobile ? 0 : 80),
           x: isMobile ? (sidebarOpen ? 0 : -260) : 0
         }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={cn(
           "fixed left-0 top-0 h-screen bg-card/80 backdrop-blur-xl border-r border-border z-50 flex flex-col",
-          isMobile && "shadow-2xl"
+          isMobile ? "shadow-2xl" : ""
         )}
       >
       {/* Header */}

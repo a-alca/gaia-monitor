@@ -158,7 +158,9 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
           <div className="flex items-center gap-2 text-xs text-foreground-muted">
             <Activity className="w-4 h-4" />
             <span>Atualizado: </span>
-            <span>{new Date(displayData.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
+            <span suppressHydrationWarning>
+              {new Date(displayData.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            </span>
           </div>
         </div>
       </div>
