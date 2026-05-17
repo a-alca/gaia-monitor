@@ -1,5 +1,5 @@
 import { MainLayout } from '@/components/layout/MainLayout';
-import { HeroSection } from '@/components/dashboard/HeroSection';
+import { HistoricalTemperatureSection } from '@/components/dashboard/HistoricalTemperatureSection';
 import { ClimateWidget } from '@/components/widgets/ClimateWidget';
 import { WildfireWidget } from '@/components/widgets/WildfireWidget';
 import { AirQualityWidget } from '@/components/widgets/AirQualityWidget';
@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <MainLayout>
       <div className="p-4 lg:p-6">
-        <HeroSection />
+        <HistoricalTemperatureSection />
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 mb-6">
           <div className="lg:col-span-2 order-2 lg:order-1">

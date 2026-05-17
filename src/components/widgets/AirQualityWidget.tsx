@@ -1,15 +1,40 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Wind, AlertCircle, TrendingUp, Activity } from 'lucide-react';
+import { Wind, AlertCircle, TrendingUp, Activity, RefreshCw } from 'lucide-react';
 import { AirQualityData } from '@/types';
+import { useEnvironmentStore } from '@/stores/environmentStore';
+import { useEffect, useState } from 'react';
 
 interface AirQualityWidgetProps {
   data?: AirQualityData;
 }
 
 export function AirQualityWidget({ data }: AirQualityWidgetProps) {
-  const mockData: AirQualityData = {
+  const { airQualityData, loading, fetchAirQualityData } = useEnvironmentStore();
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  useEffect(() => {
+    fetchAirQualityData();
+    
+    // Auto-refresh every 15 minutes
+    const interval = setInterval(() => {
+      fetchAirQualityData();
+    }, 15 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, [fetchAirQualityData]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchAirQualityData();
+    setIsRefreshing(false);
+  };
+
+  const widgetData = data || airQualityData;
+
+  // Fallback mock data if API fails
+  const fallbackData: AirQualityData = {
     aqi: 75,
     pm25: 25.4,
     pm10: 42.1,
@@ -21,7 +46,7 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
     timestamp: new Date(),
   };
 
-  const airQualityData = data || mockData;
+  const displayData = widgetData || fallbackData;
 
   const getCategoryInfo = (category: string) => {
     switch (category) {
@@ -84,7 +109,7 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
     }
   };
 
-  const categoryInfo = getCategoryInfo(airQualityData.category);
+  const categoryInfo = getCategoryInfo(displayData.category);
 
   return (
     <motion.div
@@ -98,8 +123,18 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
           <h3 className="text-lg font-semibold text-foreground mb-1">Qualidade do Ar</h3>
           <p className="text-sm text-foreground-muted">Índice AQI em tempo real</p>
         </div>
-        <div className="p-3 bg-cyan-500/10 rounded-lg">
-          <Wind className="w-6 h-6 text-cyan-500" />
+        <div className="flex items-center gap-2">
+          <motion.button
+            onClick={handleRefresh}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="p-2 rounded-lg hover:bg-muted transition-colors"
+          >
+            <RefreshCw className={`w-5 h-5 text-foreground-muted ${isRefreshing || loading ? 'animate-spin' : ''}`} />
+          </motion.button>
+          <div className="p-3 bg-cyan-500/10 rounded-lg">
+            <Wind className="w-6 h-6 text-cyan-500" />
+          </div>
         </div>
       </div>
 
@@ -108,7 +143,7 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
         <div className="relative">
           <div className={`w-32 h-32 rounded-full ${categoryInfo.bgColor} ${categoryInfo.borderColor} border-4 flex items-center justify-center`}>
             <div className="text-center">
-              <p className="text-4xl font-bold text-foreground">{airQualityData.aqi}</p>
+              <p className="text-4xl font-bold text-foreground">{displayData.aqi}</p>
               <p className="text-xs text-foreground-muted">AQI</p>
             </div>
           </div>
@@ -122,9 +157,8 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
           <p className="text-sm text-foreground-muted mb-2">{categoryInfo.description}</p>
           <div className="flex items-center gap-2 text-xs text-foreground-muted">
             <Activity className="w-4 h-4" />
-            <span>Tendência: </span>
-            <TrendingUp className="w-4 h-4 text-red-400" />
-            <span className="text-red-400">Em alta</span>
+            <span>Atualizado: </span>
+            <span>{new Date(displayData.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         </div>
       </div>
@@ -134,36 +168,36 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
         <div className="bg-muted/30 rounded-lg p-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">PM2.5</span>
-            <AlertCircle className={`w-3 h-3 ${airQualityData.pm25 > 25 ? 'text-yellow-400' : 'text-green-400'}`} />
+            <AlertCircle className={`w-3 h-3 ${displayData.pm25 > 25 ? 'text-yellow-400' : 'text-green-400'}`} />
           </div>
-          <p className="text-lg font-semibold text-foreground">{airQualityData.pm25}</p>
+          <p className="text-lg font-semibold text-foreground">{displayData.pm25}</p>
           <p className="text-xs text-foreground-muted">µg/m³</p>
         </div>
 
         <div className="bg-muted/30 rounded-lg p-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">PM10</span>
-            <AlertCircle className={`w-3 h-3 ${airQualityData.pm10 > 50 ? 'text-yellow-400' : 'text-green-400'}`} />
+            <AlertCircle className={`w-3 h-3 ${displayData.pm10 > 50 ? 'text-yellow-400' : 'text-green-400'}`} />
           </div>
-          <p className="text-lg font-semibold text-foreground">{airQualityData.pm10}</p>
+          <p className="text-lg font-semibold text-foreground">{displayData.pm10}</p>
           <p className="text-xs text-foreground-muted">µg/m³</p>
         </div>
 
         <div className="bg-muted/30 rounded-lg p-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">O₃</span>
-            <AlertCircle className={`w-3 h-3 ${airQualityData.o3 > 50 ? 'text-yellow-400' : 'text-green-400'}`} />
+            <AlertCircle className={`w-3 h-3 ${displayData.o3 > 50 ? 'text-yellow-400' : 'text-green-400'}`} />
           </div>
-          <p className="text-lg font-semibold text-foreground">{airQualityData.o3}</p>
+          <p className="text-lg font-semibold text-foreground">{displayData.o3}</p>
           <p className="text-xs text-foreground-muted">µg/m³</p>
         </div>
 
         <div className="bg-muted/30 rounded-lg p-3">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">NO₂</span>
-            <AlertCircle className={`w-3 h-3 ${airQualityData.no2 > 40 ? 'text-yellow-400' : 'text-green-400'}`} />
+            <AlertCircle className={`w-3 h-3 ${displayData.no2 > 40 ? 'text-yellow-400' : 'text-green-400'}`} />
           </div>
-          <p className="text-lg font-semibold text-foreground">{airQualityData.no2}</p>
+          <p className="text-lg font-semibold text-foreground">{displayData.no2}</p>
           <p className="text-xs text-foreground-muted">µg/m³</p>
         </div>
       </div>
@@ -172,11 +206,11 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
       <div className="mt-3 grid grid-cols-2 gap-3">
         <div className="bg-muted/30 rounded-lg p-3">
           <span className="text-xs text-foreground-muted">SO₂</span>
-          <p className="text-lg font-semibold text-foreground">{airQualityData.so2} µg/m³</p>
+          <p className="text-lg font-semibold text-foreground">{displayData.so2} µg/m³</p>
         </div>
         <div className="bg-muted/30 rounded-lg p-3">
           <span className="text-xs text-foreground-muted">CO</span>
-          <p className="text-lg font-semibold text-foreground">{airQualityData.co} mg/m³</p>
+          <p className="text-lg font-semibold text-foreground">{displayData.co} mg/m³</p>
         </div>
       </div>
     </motion.div>

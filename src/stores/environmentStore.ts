@@ -20,6 +20,8 @@ interface EnvironmentState {
   setError: (error: string | null) => void;
   setUseRealData: (useReal: boolean) => void;
   fetchRealWildfireData: () => Promise<void>;
+  fetchClimateData: (lat?: number, lon?: number) => Promise<void>;
+  fetchAirQualityData: (lat?: number, lon?: number) => Promise<void>;
 }
 
 export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
@@ -48,6 +50,48 @@ export const useEnvironmentStore = create<EnvironmentState>((set, get) => ({
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to fetch wildfire data',
+        loading: false 
+      });
+    }
+  },
+
+  fetchClimateData: async (lat?: number, lon?: number) => {
+    set({ loading: true, error: null });
+    try {
+      const params = new URLSearchParams();
+      if (lat) params.append('lat', lat.toString());
+      if (lon) params.append('lon', lon.toString());
+      
+      const response = await fetch(`/api/climate?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch climate data');
+      }
+      const data = await response.json();
+      set({ climateData: data, loading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch climate data',
+        loading: false 
+      });
+    }
+  },
+
+  fetchAirQualityData: async (lat?: number, lon?: number) => {
+    set({ loading: true, error: null });
+    try {
+      const params = new URLSearchParams();
+      if (lat) params.append('lat', lat.toString());
+      if (lon) params.append('lon', lon.toString());
+      
+      const response = await fetch(`/api/air-quality?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch air quality data');
+      }
+      const data = await response.json();
+      set({ airQualityData: data, loading: false });
+    } catch (error) {
+      set({ 
+        error: error instanceof Error ? error.message : 'Failed to fetch air quality data',
         loading: false 
       });
     }

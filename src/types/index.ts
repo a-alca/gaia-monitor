@@ -7,6 +7,7 @@ export interface ClimateData {
   visibility: number;
   uvIndex: number;
   condition: string;
+  apparentTemperature: number;
   timestamp: Date;
 }
 
