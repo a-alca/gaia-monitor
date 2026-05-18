@@ -528,7 +528,7 @@ export default function TemperaturasHistoricasPage() {
         >
           <div className="flex items-center gap-2 mb-6">
             <Eye className="w-5 h-5 text-purple-400" />
-            <h2 className="text-lg font-semibold text-white">Dados Históricos Detalhados</h2>
+            <h2 className="text-lg font-semibold text-white">Dados Históricos Detalhados {formatCurrentDate()}</h2>
           </div>
 
           <div className="overflow-x-auto">
