@@ -16,6 +16,10 @@ export async function GET(request: Request) {
     const currentClimate = await getClimateData(latitude, longitude);
     const currentTemperature = Math.round(currentClimate.current.temperature_2m);
     const currentApparentTemperature = Math.round(currentClimate.current.apparent_temperature);
+    
+    // Estimate today's max/min (API doesn't provide current day max/min)
+    const currentMaxTemperature = currentTemperature + 3; // Estimated max
+    const currentMinTemperature = currentTemperature - 3; // Estimated min
 
     // Fetch recent historical data (past 30 days)
     const recentHistorical = await getRecentHistoricalData(latitude, longitude);
@@ -38,6 +42,8 @@ export async function GET(request: Request) {
       current: {
         temperature: currentTemperature,
         apparentTemperature: currentApparentTemperature,
+        maxTemperature: currentMaxTemperature,
+        minTemperature: currentMinTemperature,
         date: new Date().toISOString(),
       },
       recentHistorical: {
