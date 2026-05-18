@@ -264,7 +264,7 @@ export function HistoricalTemperatureSection() {
             {/* Historical Comparison */}
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <Calendar className="w-4 h-4 text-purple-400" />
+                <Calendar className="w-4 h-4 text-white" />
                 <span className="text-xs text-white font-medium uppercase tracking-wider">Comparação Histórica {formatCurrentDate()}</span>
               </div>
 
