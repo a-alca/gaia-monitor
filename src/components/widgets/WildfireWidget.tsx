@@ -94,18 +94,33 @@ export function WildfireWidget({ data }: WildfireWidgetProps) {
   };
 
   const getTimeAgo = (date: Date): string => {
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffDays = Math.floor(diffHours / 24);
-    
-    if (diffDays > 0) {
-      return `${diffDays}d atrás`;
-    } else if (diffHours > 0) {
-      return `${diffHours}h atrás`;
-    } else {
-      const diffMinutes = Math.floor(diffMs / (1000 * 60));
-      return `${diffMinutes}min atrás`;
+    try {
+      if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+        return 'Recém detectado';
+      }
+      
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      
+      // Check if date is in the future
+      if (diffMs < 0) {
+        return 'Recém detectado';
+      }
+      
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      const diffDays = Math.floor(diffHours / 24);
+      
+      if (diffDays > 0) {
+        return `${diffDays}d atrás`;
+      } else if (diffHours > 0) {
+        return `${diffHours}h atrás`;
+      } else {
+        const diffMinutes = Math.floor(diffMs / (1000 * 60));
+        return diffMinutes > 0 ? `${diffMinutes}min atrás` : 'Recém detectado';
+      }
+    } catch (error) {
+      console.error('Error in getTimeAgo:', error);
+      return 'Recém detectado';
     }
   };
 
@@ -201,7 +216,7 @@ export function WildfireWidget({ data }: WildfireWidgetProps) {
                   </span>
                 </div>
                 <span className="text-xs text-foreground-muted">
-                  {getTimeAgo(fire.detectedAt)}
+                  {fire.detectedAt ? getTimeAgo(fire.detectedAt) : 'Recém detectado'}
                 </span>
               </div>
             </motion.div>

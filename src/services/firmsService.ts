@@ -340,12 +340,25 @@ function estimateArea(frp: number): number {
  * Parse date and time from FIRMS format
  */
 function parseDateTime(dateStr: string, timeStr: string): Date {
-  // FIRMS date format: YYYY-MM-DD
-  // FIRMS time format: HH:mm
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  
-  return new Date(year, month - 1, day, hours, minutes);
+  try {
+    // FIRMS date format: YYYY-MM-DD
+    // FIRMS time format: HH:mm
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    
+    const date = new Date(year, month - 1, day, hours, minutes);
+    
+    // Validate the date
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date parsed:', { dateStr, timeStr });
+      return new Date(); // Return current date as fallback
+    }
+    
+    return date;
+  } catch (error) {
+    console.error('Error parsing date/time:', error);
+    return new Date(); // Return current date as fallback
+  }
 }
 
 /**
