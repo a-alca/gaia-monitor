@@ -1,8 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Thermometer, TrendingUp, TrendingDown, Calendar, Clock, RefreshCw } from 'lucide-react';
+import { Thermometer, TrendingUp, TrendingDown, Calendar, Clock, RefreshCw, ExternalLink } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface HistoricalData {
   current: {
@@ -43,6 +44,7 @@ interface HistoricalData {
 }
 
 export function HistoricalTemperatureSection() {
+  const router = useRouter();
   const [data, setData] = useState<HistoricalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -330,6 +332,17 @@ export function HistoricalTemperatureSection() {
             </p>
           </div>
         </div>
+
+        {/* View More Data Button */}
+        <motion.button
+          onClick={() => router.push('/temperaturas-historicas')}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="w-full mt-6 py-2 text-sm text-primary hover:text-primary-foreground hover:bg-primary transition-colors rounded-lg flex items-center justify-center gap-2"
+        >
+          <span>Ver mais dados</span>
+          <ExternalLink className="w-4 h-4" />
+        </motion.button>
       </div>
     </motion.div>
   );

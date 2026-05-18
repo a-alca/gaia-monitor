@@ -17,7 +17,8 @@ import {
   User,
   ChevronLeft,
   ChevronRight,
-  X
+  X,
+  Thermometer
 } from 'lucide-react';
 import { useUIStore } from '@/stores/uiStore';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ const navigationItems = [
   { id: 'alertas', label: 'Alertas', icon: AlertTriangle, route: '/alertas' },
   { id: 'eventos', label: 'Eventos', icon: Calendar, route: '/eventos' },
   { id: 'noticias', label: 'Notícias', icon: Newspaper, route: '/noticias' },
+  { id: 'temperaturas-historicas', label: 'Temperaturas Históricas', icon: Thermometer, route: '/temperaturas-historicas' },
   { id: 'territorios', label: 'Territórios', icon: Globe, route: '/territorios' },
   { id: 'mapa', label: 'Mapa', icon: Map, route: '/mapa' },
   { id: 'configuracoes', label: 'Configurações', icon: Settings, route: '/configuracoes' },
