@@ -14,12 +14,12 @@ export async function GET(request: Request) {
 
     // Fetch current climate data
     const currentClimate = await getClimateData(latitude, longitude);
-    const currentTemperature = Math.round(currentClimate.current.temperature_2m);
-    const currentApparentTemperature = Math.round(currentClimate.current.apparent_temperature);
+    const currentTemperature = currentClimate.current.temperature_2m; // Keep precision
+    const currentApparentTemperature = currentClimate.current.apparent_temperature;
     
     // Estimate today's max/min (API doesn't provide current day max/min)
-    const currentMaxTemperature = currentTemperature + 3; // Estimated max
-    const currentMinTemperature = currentTemperature - 3; // Estimated min
+    const currentMaxTemperature = Math.round(currentTemperature + 3); // Estimated max
+    const currentMinTemperature = Math.round(currentTemperature - 3); // Estimated min
 
     // Fetch recent historical data (past 30 days)
     const recentHistorical = await getRecentHistoricalData(latitude, longitude);
@@ -29,19 +29,19 @@ export async function GET(request: Request) {
 
     // Calculate statistics
     const recentTemperatures = recentHistorical.map(d => d.temperature);
-    const avgRecentTemperature = Math.round(recentTemperatures.reduce((a, b) => a + b, 0) / recentTemperatures.length);
+    const avgRecentTemperature = recentTemperatures.reduce((a, b) => a + b, 0) / recentTemperatures.length;
     const maxRecentTemperature = Math.max(...recentTemperatures);
     const minRecentTemperature = Math.min(...recentTemperatures);
 
     const sameDayTemperatures = sameDayHistorical.map(d => d.temperature);
     const avgSameDayTemperature = sameDayTemperatures.length > 0 
-      ? Math.round(sameDayTemperatures.reduce((a, b) => a + b, 0) / sameDayTemperatures.length)
+      ? sameDayTemperatures.reduce((a, b) => a + b, 0) / sameDayTemperatures.length
       : 0;
 
     return NextResponse.json({
       current: {
-        temperature: currentTemperature,
-        apparentTemperature: currentApparentTemperature,
+        temperature: Math.round(currentTemperature), // Rounded for display
+        apparentTemperature: Math.round(currentApparentTemperature),
         maxTemperature: currentMaxTemperature,
         minTemperature: currentMinTemperature,
         date: new Date().toISOString(),
@@ -49,20 +49,20 @@ export async function GET(request: Request) {
       recentHistorical: {
         data: recentHistorical,
         statistics: {
-          average: avgRecentTemperature,
-          max: maxRecentTemperature,
-          min: minRecentTemperature,
+          average: Math.round(avgRecentTemperature), // Rounded for display
+          max: Math.round(maxRecentTemperature),
+          min: Math.round(minRecentTemperature),
         }
       },
       sameDayHistorical: {
         data: sameDayHistorical,
         statistics: {
-          average: avgSameDayTemperature,
+          average: Math.round(avgSameDayTemperature), // Rounded for display
         }
       },
       comparison: {
-        currentVsRecentAvg: currentTemperature - avgRecentTemperature,
-        currentVsSameDayAvg: currentTemperature - avgSameDayTemperature,
+        currentVsRecentAvg: Math.round((currentTemperature - avgRecentTemperature) * 10) / 10, // Keep 1 decimal precision
+        currentVsSameDayAvg: Math.round((currentTemperature - avgSameDayTemperature) * 10) / 10, // Keep 1 decimal precision
       }
     });
   } catch (error) {
