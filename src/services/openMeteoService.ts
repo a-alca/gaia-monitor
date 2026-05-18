@@ -53,6 +53,19 @@ export interface OpenMeteoResponse {
   daily: OpenMeteoDailyData;
 }
 
+export interface OpenMeteoAirQualityCurrent {
+  time: string;
+  interval: number;
+  pm10: number;
+  pm2_5: number;
+  carbon_monoxide: number;
+  nitrogen_dioxide: number;
+  sulphur_dioxide: number;
+  ozone: number;
+  european_aqi: number;
+  us_aqi: number;
+}
+
 export interface OpenMeteoAirQualityResponse {
   latitude: number;
   longitude: number;
@@ -61,7 +74,9 @@ export interface OpenMeteoAirQualityResponse {
   timezone: string;
   timezone_abbreviation: string;
   elevation: number;
+  current_units: any;
   hourly_units: any;
+  current: OpenMeteoAirQualityCurrent;
   hourly: {
     time: string[];
     pm10: number[];
@@ -139,7 +154,7 @@ export async function getAirQualityData(
 }
 
 // Get AQI category based on US AQI
-export function getAQICategory(aqi: number): string {
+export function getAQICategory(aqi: number): 'good' | 'moderate' | 'unhealthy-sensitive' | 'unhealthy' | 'very-unhealthy' | 'hazardous' {
   if (aqi <= 50) return 'good';
   if (aqi <= 100) return 'moderate';
   if (aqi <= 150) return 'unhealthy-sensitive';

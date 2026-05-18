@@ -13,20 +13,17 @@ export async function GET(request: Request) {
 
     const data = await getAirQualityData(latitude, longitude);
 
-    // Get current hour index (most recent data)
-    const currentHourIndex = data.hourly.time.length - 1;
-
-    // Convert Open-Meteo data to our AirQualityData format
+    // Use current data instead of hourly data for more accurate real-time values
     const airQualityData: AirQualityData = {
-      aqi: Math.round(data.hourly.us_aqi[currentHourIndex]),
-      pm25: Math.round(data.hourly.pm2_5[currentHourIndex] * 10) / 10,
-      pm10: Math.round(data.hourly.pm10[currentHourIndex] * 10) / 10,
-      o3: Math.round(data.hourly.ozone[currentHourIndex] * 10) / 10,
-      no2: Math.round(data.hourly.nitrogen_dioxide[currentHourIndex] * 10) / 10,
-      so2: Math.round(data.hourly.sulphur_dioxide[currentHourIndex] * 10) / 10,
-      co: Math.round(data.hourly.carbon_monoxide[currentHourIndex] * 100) / 100,
-      category: getAQICategory(Math.round(data.hourly.us_aqi[currentHourIndex])),
-      timestamp: new Date(data.hourly.time[currentHourIndex]),
+      aqi: Math.round(data.current.us_aqi),
+      pm25: Math.round(data.current.pm2_5 * 10) / 10,
+      pm10: Math.round(data.current.pm10 * 10) / 10,
+      o3: Math.round(data.current.ozone * 10) / 10,
+      no2: Math.round(data.current.nitrogen_dioxide * 10) / 10,
+      so2: Math.round(data.current.sulphur_dioxide * 10) / 10,
+      co: Math.round(data.current.carbon_monoxide * 100) / 100,
+      category: getAQICategory(Math.round(data.current.us_aqi)),
+      timestamp: new Date(data.current.time),
     };
 
     return NextResponse.json(airQualityData);

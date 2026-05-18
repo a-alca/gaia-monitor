@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Wind, AlertCircle, TrendingUp, Activity, RefreshCw } from 'lucide-react';
 import { AirQualityData } from '@/types';
 import { useEnvironmentStore } from '@/stores/environmentStore';
+import { useLocationStore } from '@/stores/locationStore';
 import { useEffect, useState } from 'react';
 
 interface AirQualityWidgetProps {
@@ -12,22 +13,29 @@ interface AirQualityWidgetProps {
 
 export function AirQualityWidget({ data }: AirQualityWidgetProps) {
   const { airQualityData, loading, fetchAirQualityData } = useEnvironmentStore();
+  const { currentLocation } = useLocationStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   useEffect(() => {
-    fetchAirQualityData();
+    if (currentLocation) {
+      fetchAirQualityData(currentLocation.lat, currentLocation.lng);
+    }
     
     // Auto-refresh every 15 minutes
     const interval = setInterval(() => {
-      fetchAirQualityData();
+      if (currentLocation) {
+        fetchAirQualityData(currentLocation.lat, currentLocation.lng);
+      }
     }, 15 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [fetchAirQualityData]);
+  }, [fetchAirQualityData, currentLocation]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchAirQualityData();
+    if (currentLocation) {
+      await fetchAirQualityData(currentLocation.lat, currentLocation.lng);
+    }
     setIsRefreshing(false);
   };
 
@@ -116,9 +124,9 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.2 }}
-      className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-primary/30 transition-all duration-300"
+      className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-4 lg:p-5 hover:border-primary/30 transition-all duration-300"
     >
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-semibold text-foreground mb-1">Qualidade do Ar</h3>
           <p className="text-sm text-foreground-muted">Índice AQI em tempo real</p>
@@ -139,11 +147,11 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
       </div>
 
       {/* AQI Display */}
-      <div className="flex items-center gap-6 mb-6">
+      <div className="flex items-center gap-4 mb-4">
         <div className="relative">
-          <div className={`w-32 h-32 rounded-full ${categoryInfo.bgColor} ${categoryInfo.borderColor} border-4 flex items-center justify-center`}>
+          <div className={`w-24 h-24 rounded-full ${categoryInfo.bgColor} ${categoryInfo.borderColor} border-4 flex items-center justify-center`}>
             <div className="text-center">
-              <p className="text-4xl font-bold text-foreground">{displayData.aqi}</p>
+              <p className="text-3xl font-bold text-foreground">{displayData.aqi}</p>
               <p className="text-xs text-foreground-muted">AQI</p>
             </div>
           </div>
@@ -166,8 +174,8 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
       </div>
 
       {/* Pollutants Grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="bg-muted/30 rounded-lg p-3">
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-muted/30 rounded-lg p-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">PM2.5</span>
             <AlertCircle className={`w-3 h-3 ${displayData.pm25 > 25 ? 'text-yellow-400' : 'text-green-400'}`} />
@@ -176,7 +184,7 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
           <p className="text-xs text-foreground-muted">µg/m³</p>
         </div>
 
-        <div className="bg-muted/30 rounded-lg p-3">
+        <div className="bg-muted/30 rounded-lg p-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">PM10</span>
             <AlertCircle className={`w-3 h-3 ${displayData.pm10 > 50 ? 'text-yellow-400' : 'text-green-400'}`} />
@@ -185,7 +193,7 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
           <p className="text-xs text-foreground-muted">µg/m³</p>
         </div>
 
-        <div className="bg-muted/30 rounded-lg p-3">
+        <div className="bg-muted/30 rounded-lg p-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">O₃</span>
             <AlertCircle className={`w-3 h-3 ${displayData.o3 > 50 ? 'text-yellow-400' : 'text-green-400'}`} />
@@ -194,7 +202,7 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
           <p className="text-xs text-foreground-muted">µg/m³</p>
         </div>
 
-        <div className="bg-muted/30 rounded-lg p-3">
+        <div className="bg-muted/30 rounded-lg p-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs text-foreground-muted">NO₂</span>
             <AlertCircle className={`w-3 h-3 ${displayData.no2 > 40 ? 'text-yellow-400' : 'text-green-400'}`} />
@@ -205,12 +213,12 @@ export function AirQualityWidget({ data }: AirQualityWidgetProps) {
       </div>
 
       {/* Additional Pollutants */}
-      <div className="mt-3 grid grid-cols-2 gap-3">
-        <div className="bg-muted/30 rounded-lg p-3">
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <div className="bg-muted/30 rounded-lg p-2">
           <span className="text-xs text-foreground-muted">SO₂</span>
           <p className="text-lg font-semibold text-foreground">{displayData.so2} µg/m³</p>
         </div>
-        <div className="bg-muted/30 rounded-lg p-3">
+        <div className="bg-muted/30 rounded-lg p-2">
           <span className="text-xs text-foreground-muted">CO</span>
           <p className="text-lg font-semibold text-foreground">{displayData.co} mg/m³</p>
         </div>

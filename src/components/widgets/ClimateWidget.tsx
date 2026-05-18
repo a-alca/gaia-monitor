@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Cloud, Droplets, Wind, Eye, Thermometer, Gauge, RefreshCw } from 'lucide-react';
 import { ClimateData } from '@/types';
 import { useEnvironmentStore } from '@/stores/environmentStore';
+import { useLocationStore } from '@/stores/locationStore';
 import { useEffect, useState } from 'react';
 
 interface ClimateWidgetProps {
@@ -12,22 +13,29 @@ interface ClimateWidgetProps {
 
 export function ClimateWidget({ data }: ClimateWidgetProps) {
   const { climateData, loading, fetchClimateData } = useEnvironmentStore();
+  const { currentLocation } = useLocationStore();
   const [isRefreshing, setIsRefreshing] = useState(false);
   
   useEffect(() => {
-    fetchClimateData();
+    if (currentLocation) {
+      fetchClimateData(currentLocation.lat, currentLocation.lng);
+    }
     
     // Auto-refresh every 10 minutes
     const interval = setInterval(() => {
-      fetchClimateData();
+      if (currentLocation) {
+        fetchClimateData(currentLocation.lat, currentLocation.lng);
+      }
     }, 10 * 60 * 1000);
     
     return () => clearInterval(interval);
-  }, [fetchClimateData]);
+  }, [fetchClimateData, currentLocation]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchClimateData();
+    if (currentLocation) {
+      await fetchClimateData(currentLocation.lat, currentLocation.lng);
+    }
     setIsRefreshing(false);
   };
 

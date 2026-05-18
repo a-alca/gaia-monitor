@@ -14,6 +14,7 @@ import {
   Map, 
   Globe, 
   Settings,
+  User,
   ChevronLeft,
   ChevronRight,
   X
@@ -33,6 +34,7 @@ const navigationItems = [
   { id: 'territorios', label: 'Territórios', icon: Globe, route: '/territorios' },
   { id: 'mapa', label: 'Mapa', icon: Map, route: '/mapa' },
   { id: 'configuracoes', label: 'Configurações', icon: Settings, route: '/configuracoes' },
+  { id: 'admin', label: 'Admin', icon: User, route: '/admin' },
 ];
 
 export function Sidebar() {

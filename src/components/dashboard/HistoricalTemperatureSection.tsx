@@ -94,6 +94,11 @@ export function HistoricalTemperatureSection() {
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   };
 
+  const formatCurrentDate = () => {
+    const now = new Date();
+    return now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
+  };
+
   if (loading && !data) {
     return (
       <motion.div
@@ -214,12 +219,13 @@ export function HistoricalTemperatureSection() {
               </p>
               <div className="flex items-center justify-center gap-2">
                 {(() => {
-                  const ComparisonIcon = getComparisonIcon(data?.comparison.currentVsRecentAvg || 0);
+                  const currentVsRecentAvg = data?.comparison.currentVsRecentAvg ?? 0;
+                  const ComparisonIcon = getComparisonIcon(currentVsRecentAvg);
                   return (
                     <>
-                      <ComparisonIcon className={`w-5 h-5 ${getComparisonColor(data?.comparison.currentVsRecentAvg || 0)}`} />
-                      <span className={`text-lg font-semibold ${getComparisonColor(data?.comparison.currentVsRecentAvg || 0)}`}>
-                        {data?.comparison.currentVsRecentAvg > 0 ? '+' : ''}{data?.comparison.currentVsRecentAvg}°
+                      <ComparisonIcon className={`w-5 h-5 ${getComparisonColor(currentVsRecentAvg)}`} />
+                      <span className={`text-lg font-semibold ${getComparisonColor(currentVsRecentAvg)}`}>
+                        {currentVsRecentAvg > 0 ? '+' : ''}{currentVsRecentAvg}°
                       </span>
                     </>
                   );
@@ -250,12 +256,13 @@ export function HistoricalTemperatureSection() {
               </p>
               <div className="flex items-center justify-center gap-2">
                 {(() => {
-                  const ComparisonIcon = getComparisonIcon(data?.comparison.currentVsSameDayAvg || 0);
+                  const currentVsSameDayAvg = data?.comparison.currentVsSameDayAvg ?? 0;
+                  const ComparisonIcon = getComparisonIcon(currentVsSameDayAvg);
                   return (
                     <>
-                      <ComparisonIcon className={`w-5 h-5 ${getComparisonColor(data?.comparison.currentVsSameDayAvg || 0)}`} />
-                      <span className={`text-lg font-semibold ${getComparisonColor(data?.comparison.currentVsSameDayAvg || 0)}`}>
-                        {data?.comparison.currentVsSameDayAvg > 0 ? '+' : ''}{data?.comparison.currentVsSameDayAvg}°
+                      <ComparisonIcon className={`w-5 h-5 ${getComparisonColor(currentVsSameDayAvg)}`} />
+                      <span className={`text-lg font-semibold ${getComparisonColor(currentVsSameDayAvg)}`}>
+                        {currentVsSameDayAvg > 0 ? '+' : ''}{currentVsSameDayAvg}°
                       </span>
                     </>
                   );
@@ -267,7 +274,7 @@ export function HistoricalTemperatureSection() {
 
         {/* Historical Data Table */}
         <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Dados Históricos do Mesmo Dia</h3>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Dados Históricos do Mesmo Dia {formatCurrentDate()}</h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
