@@ -63,7 +63,6 @@ export default function TemperaturasHistoricasPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [timeFilter, setTimeFilter] = useState<'7d' | '30d' | '1y' | '5y'>('5y');
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -244,25 +243,6 @@ export default function TemperaturasHistoricasPage() {
 
       {/* Main Content */}
       <main className="relative z-10 p-6">
-        {/* Time Filters */}
-        <div className="mb-6 flex items-center gap-2">
-          {(['7d', '30d', '1y', '5y'] as const).map((filter) => (
-            <motion.button
-              key={filter}
-              onClick={() => setTimeFilter(filter)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                timeFilter === filter
-                  ? 'bg-primary text-white shadow-lg shadow-primary/50'
-                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
-              }`}
-            >
-              {filter === '7d' ? '7 Dias' : filter === '30d' ? '30 Dias' : filter === '1y' ? '1 Ano' : '5 Anos'}
-            </motion.button>
-          ))}
-        </div>
-
         {/* Hero Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
