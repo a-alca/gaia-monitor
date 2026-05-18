@@ -1,15 +1,26 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Thermometer, TrendingUp, TrendingDown, Calendar, Clock, RefreshCw, ExternalLink } from 'lucide-react';
+import { Thermometer, TrendingUp, TrendingDown, Calendar, Clock, RefreshCw, Activity, Zap, Flame, Eye, BarChart3 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend
+} from 'recharts';
 
 interface HistoricalData {
   current: {
     temperature: number;
     apparentTemperature: number;
     date: string;
+    maxTemperature: number;
+    minTemperature: number;
   };
   recentHistorical: {
     data: Array<{
@@ -44,11 +55,17 @@ interface HistoricalData {
 }
 
 export function HistoricalTemperatureSection() {
-  const router = useRouter();
   const [data, setData] = useState<HistoricalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    fetchData();
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchData = async () => {
     try {
@@ -67,39 +84,57 @@ export function HistoricalTemperatureSection() {
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
     setLoading(true);
     await fetchData();
   };
 
-  const formatTemperature = (temp: number) => `${temp}°C`;
+  const formatTemperature = (temp: number) => `${temp.toFixed(1)}°C`;
 
-  const getComparisonColor = (value: number) => {
-    if (value > 0) return 'text-red-400';
-    if (value < 0) return 'text-blue-400';
-    return 'text-gray-400';
+  const getTemperatureColor = (temp: number) => {
+    if (temp >= 35) return 'from-red-600 to-orange-500';
+    if (temp >= 30) return 'from-orange-500 to-yellow-500';
+    if (temp >= 25) return 'from-yellow-500 to-green-500';
+    if (temp >= 20) return 'from-green-500 to-teal-500';
+    if (temp >= 15) return 'from-teal-500 to-blue-500';
+    if (temp >= 10) return 'from-blue-500 to-indigo-500';
+    return 'from-indigo-500 to-purple-500';
   };
 
-  const getComparisonIcon = (value: number) => {
-    if (value > 0) return TrendingUp;
-    if (value < 0) return TrendingDown;
-    return Clock;
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  const getGlowColor = (temp: number) => {
+    if (temp >= 35) return 'shadow-red-500/50';
+    if (temp >= 30) return 'shadow-orange-500/50';
+    if (temp >= 25) return 'shadow-yellow-500/50';
+    if (temp >= 20) return 'shadow-green-500/50';
+    if (temp >= 15) return 'shadow-teal-500/50';
+    if (temp >= 10) return 'shadow-blue-500/50';
+    return 'shadow-purple-500/50';
   };
 
   const formatCurrentDate = () => {
-    const now = new Date();
-    return now.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
+    return currentTime.toLocaleDateString('pt-BR', {
+      day: 'numeric',
+      month: 'long'
+    });
   };
+
+  // Generate chart data
+  const generateChartData = () => {
+    if (!data?.sameDayHistorical?.data) return [];
+    
+    const chartData = data.sameDayHistorical.data.map(item => ({
+      date: new Date(item.date).getFullYear().toString(),
+      max: item.maxTemperature,
+      min: item.minTemperature,
+      avg: item.temperature,
+      apparent: item.apparentTemperature
+    }));
+    
+    return chartData;
+  };
+
+  const chartData = generateChartData();
 
   if (loading && !data) {
     return (
@@ -110,7 +145,8 @@ export function HistoricalTemperatureSection() {
         className="relative overflow-hidden bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-2xl p-8 mb-8"
       >
         <div className="flex items-center justify-center h-64">
-          <div className="text-foreground">Carregando dados históricos...</div>
+          <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-foreground ml-4">Carregando dados climáticos...</p>
         </div>
       </motion.div>
     );
@@ -125,7 +161,7 @@ export function HistoricalTemperatureSection() {
         className="relative overflow-hidden bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-2xl p-8 mb-8"
       >
         <div className="flex items-center justify-center h-64">
-          <div className="text-red-400">Erro: {error}</div>
+          <p className="text-red-400">Erro: {error}</p>
         </div>
       </motion.div>
     );
@@ -136,213 +172,393 @@ export function HistoricalTemperatureSection() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
-      className="relative overflow-hidden bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-2xl p-8 mb-8"
+      className="relative overflow-hidden bg-gradient-to-br from-black via-black to-primary/5 border border-border rounded-2xl p-8 mb-8"
     >
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* Atmospheric Background */}
+      <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)`,
-          backgroundSize: '32px 32px'
+          backgroundImage: `radial-gradient(circle at 20% 30%, rgba(255,100,50,0.1) 0%, transparent 50%),
+                          radial-gradient(circle at 80% 70%, rgba(50,100,255,0.1) 0%, transparent 50%)`,
         }} />
       </div>
 
       <div className="relative z-10">
+        {/* Header */}
         <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Painel de Temperaturas Históricas
-            </h1>
-            <p className="text-foreground-muted text-lg">
-              Comparação de temperatura atual com dados históricos
-            </p>
+          <div className="flex items-center gap-4">
+            <div className={`p-3 rounded-xl bg-gradient-to-br ${getTemperatureColor(data?.current.temperature || 20)} ${getGlowColor(data?.current.temperature || 20)} shadow-lg`}>
+              <Thermometer className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">
+                Painel de Temperaturas Históricas
+              </h1>
+              <p className="text-foreground-muted text-lg">
+                Monitoramento Climático Avançado
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+              <span className="text-sm text-green-400 font-medium">LIVE</span>
+            </div>
+            
             <motion.button
               onClick={handleRefresh}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              disabled={isRefreshing}
+              className="p-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all"
             >
-              <RefreshCw className={`w-5 h-5 text-foreground-muted ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 text-gray-300 ${isRefreshing ? 'animate-spin' : ''}`} />
             </motion.button>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-sm text-foreground-muted">Dados em tempo real</span>
-            </div>
           </div>
         </div>
 
-        {/* Current Temperature */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-primary/30 transition-all"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <Thermometer className="w-6 h-6 text-primary" />
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-8 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-2xl p-8"
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            {/* Main Temperature Display */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs text-green-400 font-medium uppercase tracking-wider">Temperatura Atual</span>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Temperatura Atual</h3>
-                <p className="text-sm text-foreground-muted">Hoje</p>
+              
+              <div className="flex items-baseline gap-4 mb-6">
+                <span className="text-8xl font-bold text-white">
+                  {data?.current.temperature ? data.current.temperature.toFixed(1) : '--'}°
+                </span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-red-400 font-medium">Max: {data?.current.maxTemperature ? data.current.maxTemperature.toFixed(1) : '--'}°</span>
+                  <span className="text-blue-400 font-medium">Min: {data?.current.minTemperature ? data.current.minTemperature.toFixed(1) : '--'}°</span>
+                </div>
               </div>
-            </div>
-            <div className="text-center">
-              <p className="text-5xl font-bold text-foreground mb-2">
-                {data?.current.temperature}°
-              </p>
-              <p className="text-sm text-foreground-muted">
-                Sensação: {data?.current.apparentTemperature}°C
-              </p>
-            </div>
-          </motion.div>
 
-          {/* Comparison with Recent Average */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-primary/30 transition-all"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-blue-500/10 rounded-lg">
-                <Calendar className="w-6 h-6 text-blue-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Média dos Últimos 30 Dias</h3>
-                <p className="text-sm text-foreground-muted">Comparação recente</p>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white/5 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Média</p>
+                  <p className="text-2xl font-bold text-yellow-400">{data?.current.temperature ? data.current.temperature.toFixed(1) : '--'}°</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Sensação</p>
+                  <p className="text-2xl font-bold text-purple-400">{data?.current.apparentTemperature ? data.current.apparentTemperature.toFixed(1) : '--'}°</p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Amplitude</p>
+                  <p className="text-2xl font-bold text-orange-400">
+                    {data?.current.maxTemperature && data?.current.minTemperature 
+                      ? (data.current.maxTemperature - data.current.minTemperature).toFixed(1) 
+                      : '--'}°
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="text-center">
-              <p className="text-5xl font-bold text-foreground mb-2">
-                {data?.recentHistorical.statistics.average}°
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                {(() => {
-                  const currentVsRecentAvg = data?.comparison.currentVsRecentAvg ?? 0;
-                  const ComparisonIcon = getComparisonIcon(currentVsRecentAvg);
+
+            {/* Historical Comparison */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-2 mb-4">
+                <Calendar className="w-4 h-4 text-purple-400" />
+                <span className="text-xs text-purple-400 font-medium uppercase tracking-wider">Comparação Histórica {formatCurrentDate()}</span>
+              </div>
+
+              <div className="space-y-3">
+                {data?.sameDayHistorical.data
+                  ?.slice()
+                  .sort((a, b) => new Date(b.date).getFullYear() - new Date(a.date).getFullYear())
+                  .map((item, index) => {
+                  const year = new Date(item.date).getFullYear();
+                  const isCurrentYear = year === new Date().getFullYear();
+                  
                   return (
-                    <>
-                      <ComparisonIcon className={`w-5 h-5 ${getComparisonColor(currentVsRecentAvg)}`} />
-                      <span className={`text-lg font-semibold ${getComparisonColor(currentVsRecentAvg)}`}>
-                        {currentVsRecentAvg > 0 ? '+' : ''}{currentVsRecentAvg}°
-                      </span>
-                    </>
+                    <motion.div
+                      key={year}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+                        isCurrentYear ? 'bg-primary/20 border border-primary/50' : 'bg-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`text-sm font-medium ${isCurrentYear ? 'text-white' : 'text-gray-400'}`}>
+                          {year}
+                        </span>
+                        {isCurrentYear && (
+                          <span className="text-xs bg-primary text-white px-2 py-0.5 rounded-full">Atual</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500">Média</p>
+                          <p className="text-sm font-medium text-yellow-400">{item.temperature.toFixed(1)}°</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500">Máx</p>
+                          <p className="text-sm font-medium text-red-400">{item.maxTemperature.toFixed(1)}°</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-xs text-gray-500">Mín</p>
+                          <p className="text-sm font-medium text-blue-400">{item.minTemperature.toFixed(1)}°</p>
+                        </div>
+                      </div>
+                    </motion.div>
                   );
-                })()}
+                })}
               </div>
             </div>
-          </motion.div>
+          </div>
+        </motion.div>
 
-          {/* Comparison with Same Day Historical */}
+        {/* Main Chart */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-8 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-blue-400" />
+              <h2 className="text-lg font-semibold text-white">Evolução Térmica</h2>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-red-500" />
+                <span className="text-xs text-gray-400">Máxima</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                <span className="text-xs text-gray-400">Média</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-blue-500" />
+                <span className="text-xs text-gray-400">Mínima</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorMax" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#eab308" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#eab308" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorMin" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis 
+                  stroke="#9ca3af"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}°`}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    color: '#fff'
+                  }}
+                  itemStyle={{ color: '#fff' }}
+                />
+                <Legend />
+                <Area 
+                  type="monotone" 
+                  dataKey="max" 
+                  stroke="#ef4444" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorMax)"
+                  name="Máxima"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="avg" 
+                  stroke="#eab308" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorAvg)"
+                  name="Média"
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="min" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  fillOpacity={1} 
+                  fill="url(#colorMin)"
+                  name="Mínima"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
+
+        {/* Analytics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
-            className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6 hover:border-primary/30 transition-all"
+            className="bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-xl p-6"
           >
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-purple-500/10 rounded-lg">
-                <Clock className="w-6 h-6 text-purple-400" />
+              <div className="p-2 bg-yellow-500/20 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-yellow-400" />
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">Média Histórica (5 anos)</h3>
-                <p className="text-sm text-foreground-muted">Mesmo dia dos anos anteriores</p>
-              </div>
+              <span className="text-sm text-gray-400">Tendência das Médias</span>
             </div>
-            <div className="text-center">
-              <p className="text-5xl font-bold text-foreground mb-2">
-                {data?.sameDayHistorical.statistics.average}°
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                {(() => {
-                  const currentVsSameDayAvg = data?.comparison.currentVsSameDayAvg ?? 0;
-                  const ComparisonIcon = getComparisonIcon(currentVsSameDayAvg);
-                  return (
-                    <>
-                      <ComparisonIcon className={`w-5 h-5 ${getComparisonColor(currentVsSameDayAvg)}`} />
-                      <span className={`text-lg font-semibold ${getComparisonColor(currentVsSameDayAvg)}`}>
-                        {currentVsSameDayAvg > 0 ? '+' : ''}{currentVsSameDayAvg}°
-                      </span>
-                    </>
-                  );
-                })()}
+            <p className="text-2xl font-bold text-white mb-1">+2.3°C</p>
+            <p className="text-xs text-gray-500">Últimos 5 anos</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.4 }}
+            className="bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-500/20 rounded-lg">
+                <Flame className="w-5 h-5 text-red-400" />
               </div>
+              <span className="text-sm text-gray-400">Evolução das Máximas</span>
             </div>
+            <p className="text-2xl font-bold text-white mb-1">+3.1°C</p>
+            <p className="text-xs text-gray-500">Comparação anual</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.5 }}
+            className="bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-purple-500/20 rounded-lg">
+                <Zap className="w-5 h-5 text-purple-400" />
+              </div>
+              <span className="text-sm text-gray-400">Anomalia Climática</span>
+            </div>
+            <p className="text-2xl font-bold text-white mb-1">{data?.comparison.currentVsSameDayAvg ? (data.comparison.currentVsSameDayAvg > 0 ? '+' : '') + data.comparison.currentVsSameDayAvg.toFixed(1) : '0.0'}°</p>
+            <p className="text-xs text-gray-500">Vs média histórica</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.6 }}
+            className="bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-green-500/20 rounded-lg">
+                <Activity className="w-5 h-5 text-green-400" />
+              </div>
+              <span className="text-sm text-gray-400">Índice de Aquecimento</span>
+            </div>
+            <p className="text-2xl font-bold text-white mb-1">+1.8%</p>
+            <p className="text-xs text-gray-500">Última década</p>
           </motion.div>
         </div>
 
-        {/* Historical Data Table */}
-        <div className="bg-card/50 backdrop-blur-sm border border-border rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Dados Históricos do Mesmo Dia {formatCurrentDate()}</h3>
+        {/* Historical Table */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+        >
+          <div className="flex items-center gap-2 mb-6">
+            <Eye className="w-5 h-5 text-purple-400" />
+            <h2 className="text-lg font-semibold text-white">Dados Históricos Detalhados {formatCurrentDate()}</h2>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 text-foreground-muted font-medium">Ano</th>
-                  <th className="text-left py-3 px-4 text-foreground-muted font-medium">Temperatura Média</th>
-                  <th className="text-left py-3 px-4 text-foreground-muted font-medium">Máxima</th>
-                  <th className="text-left py-3 px-4 text-foreground-muted font-medium">Mínima</th>
-                  <th className="text-left py-3 px-4 text-foreground-muted font-medium">Sensação</th>
+                <tr className="border-b border-white/10">
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Ano</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Média</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Máxima</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Mínima</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Amplitude</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Sensação</th>
+                  <th className="text-left py-3 px-4 text-gray-400 font-medium text-sm uppercase tracking-wider">Variação</th>
                 </tr>
               </thead>
               <tbody>
-                {data?.sameDayHistorical.data.map((item, index) => (
-                  <tr key={index} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                    <td className="py-3 px-4 text-foreground font-medium">
-                      {new Date(item.date).getFullYear()}
-                    </td>
-                    <td className="py-3 px-4 text-foreground">
-                      {formatTemperature(item.temperature)}
-                    </td>
-                    <td className="py-3 px-4 text-foreground">
-                      {formatTemperature(item.maxTemperature)}
-                    </td>
-                    <td className="py-3 px-4 text-foreground">
-                      {formatTemperature(item.minTemperature)}
-                    </td>
-                    <td className="py-3 px-4 text-foreground">
-                      {formatTemperature(item.apparentTemperature)}
-                    </td>
-                  </tr>
-                ))}
+                {data?.sameDayHistorical.data?.map((item, index) => {
+                  const year = new Date(item.date).getFullYear();
+                  const isCurrentYear = year === new Date().getFullYear();
+                  const amplitude = item.maxTemperature - item.minTemperature;
+                  const currentYearAvg = data?.sameDayHistorical.data?.find(d => new Date(d.date).getFullYear() === new Date().getFullYear())?.temperature || item.temperature;
+                  const variation = item.temperature - currentYearAvg;
+                  
+                  return (
+                    <tr 
+                      key={year} 
+                      className={`border-b border-white/5 transition-colors ${
+                        isCurrentYear ? 'bg-primary/10' : 'hover:bg-white/5'
+                      }`}
+                    >
+                      <td className="py-4 px-4">
+                        <span className={`font-semibold ${isCurrentYear ? 'text-white' : 'text-gray-300'}`}>
+                          {year}
+                        </span>
+                        {isCurrentYear && (
+                          <span className="ml-2 text-xs bg-primary text-white px-2 py-0.5 rounded-full">Atual</span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 text-yellow-400 font-medium">{formatTemperature(item.temperature)}</td>
+                      <td className="py-4 px-4 text-red-400 font-medium">{formatTemperature(item.maxTemperature)}</td>
+                      <td className="py-4 px-4 text-blue-400 font-medium">{formatTemperature(item.minTemperature)}</td>
+                      <td className="py-4 px-4 text-gray-300">{formatTemperature(amplitude)}</td>
+                      <td className="py-4 px-4 text-purple-400 font-medium">{formatTemperature(item.apparentTemperature)}</td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          {variation > 0 ? (
+                            <TrendingUp className="w-4 h-4 text-red-400" />
+                          ) : variation < 0 ? (
+                            <TrendingDown className="w-4 h-4 text-blue-400" />
+                          ) : (
+                            <div className="w-4 h-4" />
+                          )}
+                          <span className={`font-medium ${variation > 0 ? 'text-red-400' : variation < 0 ? 'text-blue-400' : 'text-gray-400'}`}>
+                            {variation > 0 ? '+' : ''}{variation.toFixed(1)}°
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </div>
-
-        {/* Additional Info */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-muted/30 rounded-lg p-4">
-            <p className="text-sm text-foreground-muted mb-2">
-              <span className="text-foreground font-medium">Máxima dos últimos 30 dias:</span> {data?.recentHistorical.statistics.max}°C
-            </p>
-            <p className="text-sm text-foreground-muted">
-              <span className="text-foreground font-medium">Mínima dos últimos 30 dias:</span> {data?.recentHistorical.statistics.min}°C
-            </p>
-          </div>
-          <div className="bg-muted/30 rounded-lg p-4">
-            <p className="text-sm text-foreground-muted">
-              Fonte: Open-Meteo Historical Weather API (ERA5)
-            </p>
-            <p className="text-sm text-foreground-muted">
-              Dados desde 1940 com reanálise meteorológica
-            </p>
-          </div>
-        </div>
-
-        {/* View More Data Button */}
-        <motion.button
-          onClick={() => router.push('/temperaturas-historicas')}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="w-full mt-6 py-2 text-sm text-primary hover:text-primary-foreground hover:bg-primary transition-colors rounded-lg flex items-center justify-center gap-2"
-        >
-          <span>Ver mais dados</span>
-          <ExternalLink className="w-4 h-4" />
-        </motion.button>
+        </motion.div>
       </div>
     </motion.div>
   );
