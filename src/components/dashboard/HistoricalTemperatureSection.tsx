@@ -189,19 +189,19 @@ export function HistoricalTemperatureSection() {
             <div className={`p-3 rounded-xl bg-gradient-to-br ${getTemperatureColor(data?.current.temperature || 20)} ${getGlowColor(data?.current.temperature || 20)} shadow-lg`}>
               <Thermometer className="w-6 h-6 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">
+            <div className="flex items-center">
+              <h1 className="text-3xl font-bold text-foreground">
                 Painel de Temperaturas Históricas
               </h1>
-              <p className="text-foreground-muted text-lg">
-                Monitoramento Climático Avançado
-              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10">
-              <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-sm text-green-400 font-medium">LIVE</span>
+            <div className="flex flex-col items-end gap-1">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-sm text-green-400 font-medium">Ao vivo</span>
+              </div>
+              <span className="text-xs text-gray-500">Fonte: Open-Meteo API</span>
             </div>
             
             <motion.button
