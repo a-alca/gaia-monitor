@@ -146,65 +146,6 @@ export default function TemperaturasHistoricasPage() {
 
   const chartData = generateChartData();
 
-  // Generate insights
-  const generateInsights = () => {
-    if (!data?.sameDayHistorical?.data || data.sameDayHistorical.data.length === 0) return [];
-    
-    const insights = [];
-    const currentYear = new Date().getFullYear();
-    const sameDayData = data.sameDayHistorical.data;
-    const currentYearData = sameDayData[sameDayData.length - 1];
-    const previousYears = sameDayData.slice(0, -1);
-    
-    if (previousYears.length > 0 && currentYearData) {
-      const avgTrend = currentYearData.temperature - previousYears[0].temperature;
-      insights.push({
-        icon: TrendingUp,
-        text: `A temperatura média aumentou ${avgTrend > 0 ? '+' : ''}${avgTrend.toFixed(1)}°C nos últimos ${previousYears.length} anos`,
-        type: avgTrend > 0 ? 'warning' : 'info'
-      });
-    }
-    
-    if (sameDayData.length > 0) {
-      const maxRecord = Math.max(...sameDayData.map(d => d.maxTemperature));
-      const maxRecordYear = sameDayData.find(d => d.maxTemperature === maxRecord);
-      if (maxRecordYear && new Date(maxRecordYear.date).getFullYear() === currentYear) {
-        insights.push({
-          icon: Flame,
-          text: `${currentYear} registra a máxima histórica de ${maxRecord.toFixed(1)}°C para esta data`,
-          type: 'danger'
-        });
-      }
-    }
-    
-    if (previousYears.length > 0 && currentYearData) {
-      const minTrend = currentYearData.minTemperature - previousYears[previousYears.length - 1]?.minTemperature;
-      if (minTrend > 0) {
-        insights.push({
-          icon: Snowflake,
-          text: 'As mínimas noturnas estão progressivamente mais elevadas',
-          type: 'warning'
-        });
-      }
-    }
-    
-    if (currentYearData && sameDayData.length > 0) {
-      const currentAmplitude = currentYearData.maxTemperature - currentYearData.minTemperature;
-      const avgAmplitude = sameDayData.reduce((acc, d) => acc + (d.maxTemperature - d.minTemperature), 0) / sameDayData.length;
-      if (currentAmplitude < avgAmplitude) {
-        insights.push({
-          icon: Activity,
-          text: 'A amplitude térmica diminuiu em relação aos anos anteriores',
-          type: 'info'
-        });
-      }
-    }
-    
-    return insights;
-  };
-
-  const insights = generateInsights();
-
   if (loading && !data) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -660,46 +601,6 @@ export default function TemperaturasHistoricasPage() {
                 })}
               </tbody>
             </table>
-          </div>
-        </motion.div>
-
-        {/* Automatic Insights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.5 }}
-          className="bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
-        >
-          <div className="flex items-center gap-2 mb-6">
-            <AlertTriangle className="w-5 h-5 text-orange-400" />
-            <h2 className="text-lg font-semibold text-white">Análise Climática Inteligente</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {insights.map((insight, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.6 + index * 0.1 }}
-                className={`flex items-start gap-3 p-4 rounded-lg border ${
-                  insight.type === 'danger' 
-                    ? 'bg-red-500/10 border-red-500/30' 
-                    : insight.type === 'warning' 
-                    ? 'bg-yellow-500/10 border-yellow-500/30' 
-                    : 'bg-blue-500/10 border-blue-500/30'
-                }`}
-              >
-                <insight.icon className={`w-5 h-5 mt-0.5 ${
-                  insight.type === 'danger' 
-                    ? 'text-red-400' 
-                    : insight.type === 'warning' 
-                    ? 'text-yellow-400' 
-                    : 'text-blue-400'
-                }`} />
-                <p className="text-sm text-gray-300">{insight.text}</p>
-              </motion.div>
-            ))}
           </div>
         </motion.div>
       </main>
