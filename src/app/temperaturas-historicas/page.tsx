@@ -128,6 +128,13 @@ export default function TemperaturasHistoricasPage() {
     });
   };
 
+  const formatCurrentDate = () => {
+    return currentTime.toLocaleDateString('pt-BR', {
+      day: 'numeric',
+      month: 'long'
+    });
+  };
+
   // Generate chart data
   const generateChartData = () => {
     if (!data?.sameDayHistorical?.data) return [];
@@ -292,7 +299,7 @@ export default function TemperaturasHistoricasPage() {
             <div className="lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <Calendar className="w-4 h-4 text-purple-400" />
-                <span className="text-xs text-purple-400 font-medium uppercase tracking-wider">Comparação Histórica</span>
+                <span className="text-xs text-purple-400 font-medium uppercase tracking-wider">Comparação Histórica {formatCurrentDate()}</span>
               </div>
 
               <div className="space-y-3">
