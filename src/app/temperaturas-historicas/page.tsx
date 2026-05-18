@@ -296,7 +296,10 @@ export default function TemperaturasHistoricasPage() {
               </div>
 
               <div className="space-y-3">
-                {data?.sameDayHistorical.data?.slice(-5).reverse().map((item, index) => {
+                {data?.sameDayHistorical.data
+                  ?.slice()
+                  .sort((a, b) => new Date(b.date).getFullYear() - new Date(a.date).getFullYear())
+                  .map((item, index) => {
                   const year = new Date(item.date).getFullYear();
                   const isCurrentYear = year === new Date().getFullYear();
                   
