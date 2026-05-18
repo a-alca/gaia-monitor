@@ -131,17 +131,17 @@ export default function TemperaturasHistoricasPage() {
 
   // Generate chart data
   const generateChartData = () => {
-    if (!data?.recentHistorical?.data) return [];
+    if (!data?.sameDayHistorical?.data) return [];
     
-    const chartData = data.recentHistorical.data.map(item => ({
-      date: new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+    const chartData = data.sameDayHistorical.data.map(item => ({
+      date: new Date(item.date).getFullYear().toString(),
       max: item.maxTemperature,
       min: item.minTemperature,
       avg: item.temperature,
       apparent: item.apparentTemperature
     }));
     
-    return chartData.slice(-30); // Last 30 days
+    return chartData; // All years data
   };
 
   const chartData = generateChartData();
